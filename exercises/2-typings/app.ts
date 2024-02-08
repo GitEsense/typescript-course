@@ -1,6 +1,10 @@
 'use strict';
 
-enum Numbers {
+// import makeOrdinal from './makeOrdinal';
+// import isFinite from './isFinite';
+// import isSafeNumber from './isSafeNumber';
+
+const enum Numbers {
     TEN = 10,
     ONE_HUNDRED = 100,
     ONE_THOUSAND = 1000,
@@ -61,11 +65,11 @@ function toWords(number: number, asOrdinal: boolean): string {
     if (!isFinite(number)) {
         throw new TypeError('Not a finite number: ' + number + ' (' + typeof number + ')');
     }
-    // if (!isSafeNumber(number)) {
-    //     throw new RangeError('Input is not a safe number, it’s either too large or too small.');
-    // }
+    if (!isSafeNumber(number)) {
+        throw new RangeError('Input is not a safe number, it’s either too large or too small.');
+    }
     words = generateWords(number);
-    return words; // asOrdinal ? makeOrdinal(words) : words;
+    return asOrdinal ? makeOrdinal(words) : words;
 }
 
 function generateWords(number: number, words: string[] = []): string {
