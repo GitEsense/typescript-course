@@ -87,16 +87,49 @@ interface IAddress {
     state: string;
 }
 interface IResponseSuccess {
-    status: string;
-    data: Users;
+    status: number;
+    data: IDataSuccess;
 }
-type Users = {
+
+interface IResponseFailed {
+    status: number;
+    data: IDataFailed;
+}
+interface IDataSuccess {
     users: IUser[];
-};
+}
+interface IDataFailed {
+    status: number;
+    statusText: string;
+}
+type Res = IResponseSuccess | IResponseFailed;
 
 const url: string = 'https://dummyjson.com/users';
 
-function assertUsers(data: unknown): asserts data is Users {
+function errorHandler(error: unknown) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+    return 'this error not instanceof Error\nerror: ' + error;
+}
+
+function isSuccessResponse(res: Res): res is IResponseSuccess {
+    if (res.status === 200) {
+        return true;
+    }
+    return false;
+}
+
+function getUsersFromData(res: Res): IUser[] {
+    if (isSuccessResponse(res)) {
+        assertUsers(res.data);
+        return res.data.users;
+    } else {
+        throw new Error(res.data.statusText);
+    }
+}
+
+function assertUsers(data: unknown): asserts data is IDataSuccess {
     if (typeof data === 'object' && !!data && 'users' in data) {
         return;
     }
@@ -112,21 +145,21 @@ function getAddressFromUser(user: IUser): IAddress | never {
 
 async function requestToDummy(): Promise<IUser[] | undefined> {
     try {
-        const { data }: IResponseSuccess = await axios(url);
-        assertUsers(data);
-        return data.users;
+        const response: IResponseSuccess = await axios(url);
+        const users = getUsersFromData(response);
+        return users;
     } catch (error) {
-        if (error instanceof Error) {
-            console.log(error);
-        }
-        return undefined;
+        throw new Error(errorHandler(error));
     }
 }
 
 async function main(): Promise<void> {
-    const users = await requestToDummy();
-    if (typeof users !== 'undefined') {
-        console.log(getAddressFromUser(users[0]));
+    try {
+        const users = await requestToDummy();
+        console.log(users);
+    } catch (error) {
+        console.log(errorHandler(error));
     }
 }
+
 main();
